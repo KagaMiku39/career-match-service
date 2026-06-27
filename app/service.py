@@ -113,7 +113,6 @@ def analyze_resume_with_llm(request: AnalyzeResumeRequest) -> AnalyzeResumeRespo
 def build_llm_prompt(request: AnalyzeResumeRequest) -> str:
     return f"""
 请分析这份简历和目标岗位的匹配度，必须只返回 JSON，不要输出 Markdown。
-
 目标岗位：{request.target_role}
 
 岗位 JD：

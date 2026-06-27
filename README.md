@@ -1,43 +1,47 @@
 # CareerMatch Service
 
-一个面向求职场景的简历与岗位 JD 匹配分析后端服务。
+A small FastAPI backend for resume and job-description matching.
 
-这个项目的目标不是做一个“全靠模型黑盒输出”的玩具 demo，而是先用可解释的规则分析跑通后端链路，再预留 GLM/OpenAI 兼容大模型接口。这样即使没有 API Key，服务也能稳定演示；有 API Key 时，可以切换到大模型分析模式。
+This project is built as an interview-oriented backend practice project: it first provides a stable rule-based baseline, then keeps an OpenAI-compatible LLM integration path for providers such as Zhipu GLM. The service can run locally with SQLite and can switch to MySQL through configuration.
 
-## 功能
+## Features
 
-- 提供简历/JD 匹配分析接口，返回匹配分、优势、短板建议和模拟面试题。
-- 使用 SQLite 保存每次分析记录。
-- 提供历史记录列表和详情查询接口。
-- 支持通过环境变量配置 OpenAI 兼容大模型 API，例如智谱 GLM。
-- 未配置模型 API 或模型调用失败时，自动回退到本地规则分析。
+- Analyze resume text against a target job description.
+- Return match score, matched keywords, missing keywords, strengths, improvement suggestions, and interview questions.
+- Persist every analysis record.
+- Query recent analysis records and analysis detail by id.
+- Use local rules as a reliable fallback when no LLM API key is configured.
+- Optionally call an OpenAI-compatible Chat Completions API.
+- Support SQLite by default and MySQL through `DATABASE_URL`.
 
-## 技术栈
+## Tech Stack
 
 - Python
 - FastAPI
 - Pydantic
-- SQLite
+- SQLite / MySQL
+- PyMySQL
 - OpenAI-compatible Chat Completions API
 
-## 项目结构
+## Project Structure
 
 ```text
 app/
-  main.py       API 入口，声明路由
-  schemas.py    请求和响应模型
-  service.py    简历/JD 分析逻辑和可选 LLM 调用
-  storage.py    SQLite 建表、插入、查询
+  main.py       FastAPI app and route registration
+  schemas.py    request and response models
+  service.py    resume/JD analysis logic and optional LLM call
+  storage.py    SQLite/MySQL persistence layer
 docs/
-  learning/     学习笔记和源码阅读记录
+  learning/     learning notes and source walkthroughs
+  mysql_setup.md
+examples/
+  analyze_request.json
 requirements.txt
 .env.example
 .gitignore
 ```
 
-## 启动
-
-建议使用 Python 3.12。
+## Quick Start
 
 ```powershell
 cd D:\Unity\Experiment\Farm_Final_Integration\career_match_service
@@ -47,7 +51,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-浏览器打开：
+Open:
 
 ```text
 http://127.0.0.1:8000/docs
@@ -55,74 +59,74 @@ http://127.0.0.1:8000/docs
 
 ## API
 
-### GET /health
+### GET `/health`
 
-检查服务是否正常运行。
+Check whether the service is running.
 
-### POST /resume/analyze
+### POST `/resume/analyze`
 
-提交简历文本和岗位描述，返回匹配分析结果。
+Analyze resume text and job description.
 
-请求示例：
+Example request:
 
 ```json
 {
-  "resume_text": "数字媒体技术专业，长期进行 ACM 训练，开发过 Unity 农场项目，也在学习 Python FastAPI Prompt 大模型 API。",
+  "resume_text": "数字媒体技术专业，长期进行 ACM/Codeforces/AtCoder 算法训练，参与 Unity 农场项目开发，负责背包、事件总线、JSON 数据配置和 Bug 修复，并学习 Python FastAPI 大模型应用后端。",
   "job_description": "大模型应用后端开发实习生，要求 Python、数据库、Prompt、LLM API、RAG、Redis、Docker。",
   "target_role": "大模型应用后端开发实习生",
   "use_llm": false
 }
 ```
 
-响应示例：
+Example response:
 
 ```json
 {
   "record_id": 1,
   "target_role": "大模型应用后端开发实习生",
   "match_score": 76,
-  "matched_keywords": ["python", "fastapi", "llm api", "prompt"],
-  "missing_keywords": ["database", "redis", "rag", "docker"],
+  "matched_keywords": ["python", "fastapi", "llm api", "prompt", "database"],
+  "missing_keywords": ["redis", "rag", "docker"],
   "strengths": ["具备算法训练经历，适合强调问题拆解、复杂度分析和快速学习能力。"],
-  "suggestions": ["使用 SQLite 或 MySQL 保存分析记录，补充表结构设计说明。"],
+  "suggestions": ["用 Redis 缓存重复 JD 分析结果，说明缓存 key 和过期时间设计。"],
   "interview_questions": ["如果让你设计一个简历分析的大模型后端接口，你会如何设计请求、响应和异常处理？"],
   "analysis_mode": "rule"
 }
 ```
 
-### GET /analyses
+### GET `/analyses`
 
-查询最近的分析记录。
+Query recent analysis records.
 
-### GET /analyses/{record_id}
+### GET `/analyses/{record_id}`
 
-查询某条分析记录详情。
+Query one analysis record detail.
 
-## 可选：配置智谱 GLM
+## Optional: MySQL
 
-复制 `.env.example` 里的配置，或在 PowerShell 中设置环境变量：
+SQLite is used when `DATABASE_URL` is empty. To switch to MySQL, create a `.env` file:
 
-```powershell
-$env:LLM_API_KEY="your_api_key"
-$env:LLM_BASE_URL="https://open.bigmodel.cn/api/paas/v4/chat/completions"
-$env:LLM_MODEL="glm-5.2"
+```env
+DATABASE_URL=mysql+pymysql://career_user:career_password@127.0.0.1:3306/career_match
 ```
 
-然后请求 `/resume/analyze` 时设置：
+Then restart the service. See [docs/mysql_setup.md](docs/mysql_setup.md) for the SQL setup and design notes.
 
-```json
-{
-  "use_llm": true
-}
+## Optional: Zhipu GLM
+
+Add the following configuration to `.env`:
+
+```env
+LLM_API_KEY=your_api_key
+LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/chat/completions
+LLM_MODEL=glm-5.2
 ```
 
-如果模型调用失败，服务会自动回退到规则分析模式。
+Then set `use_llm` to `true` in the `/resume/analyze` request. If the LLM call fails, the service falls back to local rule-based analysis.
 
-## 设计取舍
+## Design Notes
 
-- 第一版使用 SQLite，是为了快速验证持久化流程；后续可以迁移到 MySQL。
-- 规则分析不是为了替代大模型，而是作为可解释 baseline 和模型失败时的 fallback。
-- Prompt 要求模型返回 JSON，方便后端解析并转成固定响应结构。
-
-更多设计记录见 [docs/design_notes.md](docs/design_notes.md)。
-
+- SQLite is kept as the default because it makes the project easy to run locally.
+- MySQL support is added through a storage layer, so the API and service logic do not need to care which database is used.
+- Rule-based scoring is used as an explainable baseline and fallback.
+- The LLM prompt asks the model to return JSON, making the result easier for the backend to validate and store.

@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 
 from app.schemas import (
@@ -9,6 +10,8 @@ from app.schemas import (
 )
 from app.service import analyze_resume
 from app.storage import get_analysis_record, init_db, list_analysis_records, save_analysis
+
+load_dotenv()
 
 app = FastAPI(
     title="CareerMatch Service",
