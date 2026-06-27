@@ -269,7 +269,7 @@ struct HealthResponse : BaseModel {
 ```python
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-    return HealthResponse(status="ok", service="ai-resume-backend")
+    return HealthResponse(status="ok", service="career-match-service")
 ```
 
 `@app.get(...)` 叫装饰器。
@@ -370,7 +370,7 @@ for (auto alias : aliases) {
 项目结构：
 
 ```text
-ai_resume_backend/
+career_match_service/
   app/
     main.py
     schemas.py
@@ -415,7 +415,7 @@ from app.service import analyze_resume
 
 ```python
 app = FastAPI(
-    title="AI Resume Backend",
+    title="CareerMatch Service",
     description="A minimal backend for resume and job-description matching.",
     version="0.1.0",
 )
@@ -434,7 +434,7 @@ uvicorn app.main:app --reload --port 8000
 ```python
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-    return HealthResponse(status="ok", service="ai-resume-backend")
+    return HealthResponse(status="ok", service="career-match-service")
 ```
 
 意思是：

@@ -115,7 +115,7 @@ Python 自带 sqlite3 可以直接操作
 我们项目里：
 
 ```text
-ai_resume_backend/data/analysis.db
+career_match_service/data/analysis.db
 ```
 
 就是 SQLite 数据库文件。

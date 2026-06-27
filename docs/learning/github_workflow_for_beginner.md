@@ -1,6 +1,6 @@
 # GitHub 工作流入门：把这个后端项目传上去
 
-这份文档按你现在的情况写：你已经有一个可运行的 `ai_resume_backend` 项目，但还不熟悉 Git/GitHub。
+这份文档按你现在的情况写：你已经有一个可运行的 `career_match_service` 项目，但还不熟悉 Git/GitHub。
 
 ## 1. 要不要上传 GitHub
 
@@ -18,7 +18,7 @@
 你应该上传：
 
 ```text
-ai_resume_backend
+career_match_service
 ```
 
 不建议上传：
@@ -89,7 +89,7 @@ GitHub 上对应的仓库地址。
 例如：
 
 ```text
-https://github.com/你的用户名/ai_resume_backend.git
+https://github.com/你的用户名/career_match_service.git
 ```
 
 ### push 推送
@@ -136,7 +136,7 @@ __pycache__/
 进入项目目录：
 
 ```powershell
-cd D:\Unity\Experiment\Farm_Final_Integration\ai_resume_backend
+cd D:\Unity\Experiment\Farm_Final_Integration\career_match_service
 ```
 
 初始化 Git 仓库：
@@ -166,7 +166,7 @@ git commit -m "Initial FastAPI resume analyzer backend"
 去 GitHub 网站创建一个新仓库，名字可以叫：
 
 ```text
-ai_resume_backend
+career_match_service
 ```
 
 创建时建议：
@@ -182,13 +182,13 @@ ai_resume_backend
 然后 GitHub 会给你远程地址，类似：
 
 ```text
-https://github.com/你的用户名/ai_resume_backend.git
+https://github.com/你的用户名/career_match_service.git
 ```
 
 绑定远程仓库：
 
 ```powershell
-git remote add origin https://github.com/你的用户名/ai_resume_backend.git
+git remote add origin https://github.com/你的用户名/career_match_service.git
 ```
 
 设置主分支名：
@@ -275,7 +275,7 @@ git rm -r --cached .venv-codex
 可以写：
 
 ```text
-GitHub: https://github.com/你的用户名/ai_resume_backend
+GitHub: https://github.com/你的用户名/career_match_service
 ```
 
 项目描述里写：

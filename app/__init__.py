@@ -1,2 +1,2 @@
-"""AI resume backend package."""
+"""CareerMatch Service package."""
 

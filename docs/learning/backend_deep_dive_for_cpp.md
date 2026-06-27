@@ -630,7 +630,7 @@ schemas.py 的模型 ≈ struct
 项目目录：
 
 ```text
-ai_resume_backend/
+career_match_service/
   app/
     __init__.py
     main.py
@@ -657,7 +657,7 @@ app = FastAPI(...)
 ```python
 @app.get("/health")
 def health():
-    return HealthResponse(status="ok", service="ai-resume-backend")
+    return HealthResponse(status="ok", service="career-match-service")
 ```
 
 表示：

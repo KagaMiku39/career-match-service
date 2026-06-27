@@ -40,7 +40,7 @@ requirements.txt
 建议使用 Python 3.12。
 
 ```powershell
-cd D:\Unity\Experiment\Farm_Final_Integration\ai_resume_backend
+cd D:\Unity\Experiment\Farm_Final_Integration\career_match_service
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
