@@ -41,3 +41,42 @@ class AnalysisRecordDetail(AnalysisRecord):
     suggestions: list[str]
     interview_questions: list[str]
     analysis_mode: str
+
+
+class KnowledgeChunkCreate(BaseModel):
+    title: str = Field(..., min_length=2, max_length=120)
+    content: str = Field(..., min_length=20)
+    tags: list[str] = Field(default_factory=list)
+
+
+class KnowledgeChunk(BaseModel):
+    id: int
+    title: str
+    content: str
+    tags: list[str]
+    created_at: str
+
+
+class KnowledgeSearchRequest(BaseModel):
+    query: str = Field(..., min_length=2)
+    top_k: int = Field(default=3, ge=1, le=10)
+
+
+class KnowledgeSearchHit(KnowledgeChunk):
+    score: int
+
+
+class KnowledgeSearchResponse(BaseModel):
+    query: str
+    hits: list[KnowledgeSearchHit]
+
+
+class RagAnswerRequest(BaseModel):
+    question: str = Field(..., min_length=2)
+    top_k: int = Field(default=3, ge=1, le=10)
+
+
+class RagAnswerResponse(BaseModel):
+    question: str
+    answer: str
+    references: list[KnowledgeSearchHit]

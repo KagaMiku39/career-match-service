@@ -7,9 +7,16 @@ from app.schemas import (
     AnalyzeResumeRequest,
     AnalyzeResumeResponse,
     HealthResponse,
+    KnowledgeChunk,
+    KnowledgeChunkCreate,
+    KnowledgeSearchRequest,
+    KnowledgeSearchResponse,
+    RagAnswerRequest,
+    RagAnswerResponse,
 )
+from app.knowledge import create_knowledge_chunk, answer_with_retrieval, search_knowledge
 from app.service import analyze_resume
-from app.storage import get_analysis_record, init_db, list_analysis_records, save_analysis
+from app.storage import get_analysis_record, init_db, list_analysis_records, list_knowledge_chunks, save_analysis
 
 load_dotenv()
 
@@ -45,3 +52,23 @@ def get_analysis(record_id: int) -> AnalysisRecordDetail:
     if record is None:
         raise HTTPException(status_code=404, detail="Analysis record not found.")
     return record
+
+
+@app.post("/knowledge/chunks", response_model=KnowledgeChunk)
+def create_chunk(chunk: KnowledgeChunkCreate) -> KnowledgeChunk:
+    return create_knowledge_chunk(chunk)
+
+
+@app.get("/knowledge/chunks", response_model=list[KnowledgeChunk])
+def list_chunks(limit: int = 50) -> list[KnowledgeChunk]:
+    return list_knowledge_chunks(limit=limit)
+
+
+@app.post("/knowledge/search", response_model=KnowledgeSearchResponse)
+def search_chunks(request: KnowledgeSearchRequest) -> KnowledgeSearchResponse:
+    return search_knowledge(request)
+
+
+@app.post("/rag/answer", response_model=RagAnswerResponse)
+def rag_answer(request: RagAnswerRequest) -> RagAnswerResponse:
+    return answer_with_retrieval(request)

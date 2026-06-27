@@ -10,6 +10,7 @@ This project is built as an interview-oriented backend practice project: it firs
 - Return match score, matched keywords, missing keywords, strengths, improvement suggestions, and interview questions.
 - Persist every analysis record.
 - Query recent analysis records and analysis detail by id.
+- Store and search knowledge chunks for a mini RAG-style workflow.
 - Use local rules as a reliable fallback when no LLM API key is configured.
 - Optionally call an OpenAI-compatible Chat Completions API.
 - Support SQLite by default and MySQL through `DATABASE_URL`.
@@ -102,6 +103,18 @@ Query recent analysis records.
 
 Query one analysis record detail.
 
+### POST `/knowledge/chunks`
+
+Create a knowledge chunk that can later be retrieved.
+
+### POST `/knowledge/search`
+
+Search related knowledge chunks with a lightweight keyword scorer.
+
+### POST `/rag/answer`
+
+Build an answer from retrieved knowledge chunks. This is a small RAG-style baseline inspired by mainstream LLM application platforms such as Dify.
+
 ## Optional: MySQL
 
 SQLite is used when `DATABASE_URL` is empty. To switch to MySQL, create a `.env` file:
@@ -129,4 +142,5 @@ Then set `use_llm` to `true` in the `/resume/analyze` request. If the LLM call f
 - SQLite is kept as the default because it makes the project easy to run locally.
 - MySQL support is added through a storage layer, so the API and service logic do not need to care which database is used.
 - Rule-based scoring is used as an explainable baseline and fallback.
+- The mini RAG module uses keyword retrieval first, leaving a clear upgrade path to embeddings and vector search.
 - The LLM prompt asks the model to return JSON, making the result easier for the backend to validate and store.

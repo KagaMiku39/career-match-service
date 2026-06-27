@@ -5,7 +5,14 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
 
-from app.schemas import AnalysisRecord, AnalysisRecordDetail, AnalyzeResumeRequest, AnalyzeResumeResponse
+from app.schemas import (
+    AnalysisRecord,
+    AnalysisRecordDetail,
+    AnalyzeResumeRequest,
+    AnalyzeResumeResponse,
+    KnowledgeChunk,
+    KnowledgeChunkCreate,
+)
 
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "analysis.db"
@@ -82,6 +89,18 @@ def init_db() -> None:
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
                     """
                 )
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS knowledge_chunks (
+                        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                        title VARCHAR(120) NOT NULL,
+                        content TEXT NOT NULL,
+                        tags JSON NOT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_knowledge_created_at (created_at)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """
+                )
             conn.commit()
         finally:
             conn.close()
@@ -102,6 +121,17 @@ def init_db() -> None:
                 suggestions TEXT NOT NULL,
                 interview_questions TEXT NOT NULL,
                 analysis_mode TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS knowledge_chunks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                tags TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
             """
@@ -231,3 +261,75 @@ def get_analysis_record(record_id: int) -> AnalysisRecordDetail | None:
         analysis_mode=row["analysis_mode"],
         created_at=str(row["created_at"]),
     )
+
+
+def save_knowledge_chunk(chunk: KnowledgeChunkCreate) -> int:
+    values = (
+        chunk.title,
+        chunk.content,
+        json.dumps(chunk.tags, ensure_ascii=False),
+    )
+
+    if is_mysql_enabled():
+        conn = get_mysql_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO knowledge_chunks (title, content, tags) VALUES (%s, %s, %s)",
+                    values,
+                )
+                chunk_id = int(cursor.lastrowid)
+            conn.commit()
+            return chunk_id
+        finally:
+            conn.close()
+
+    with get_sqlite_connection() as conn:
+        cursor = conn.execute(
+            "INSERT INTO knowledge_chunks (title, content, tags) VALUES (?, ?, ?)",
+            values,
+        )
+        return int(cursor.lastrowid)
+
+
+def list_knowledge_chunks(limit: int = 50) -> list[KnowledgeChunk]:
+    limit = max(1, min(limit, 200))
+
+    if is_mysql_enabled():
+        conn = get_mysql_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, title, content, tags, created_at
+                    FROM knowledge_chunks
+                    ORDER BY id DESC
+                    LIMIT %s
+                    """,
+                    (limit,),
+                )
+                rows = cursor.fetchall()
+        finally:
+            conn.close()
+    else:
+        with get_sqlite_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, title, content, tags, created_at
+                FROM knowledge_chunks
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+
+    return [
+        KnowledgeChunk(
+            id=row["id"],
+            title=row["title"],
+            content=row["content"],
+            tags=json.loads(row["tags"]),
+            created_at=str(row["created_at"]),
+        )
+        for row in rows
+    ]

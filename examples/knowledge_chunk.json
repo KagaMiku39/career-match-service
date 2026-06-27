@@ -1,0 +1,5 @@
+{
+  "title": "CareerMatch Service project summary",
+  "content": "CareerMatch Service is a FastAPI backend for resume and job-description matching. It uses Pydantic for request validation, SQLite or MySQL for persistence, and an OpenAI-compatible API path for optional LLM analysis.",
+  "tags": ["fastapi", "mysql", "llm", "resume"]
+}

@@ -63,6 +63,21 @@ CREATE TABLE IF NOT EXISTS analysis_records (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
+The mini RAG module also creates a `knowledge_chunks` table:
+
+```sql
+CREATE TABLE IF NOT EXISTS knowledge_chunks (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(120) NOT NULL,
+    content TEXT NOT NULL,
+    tags JSON NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_knowledge_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+`knowledge_chunks` stores source snippets for retrieval. In a full RAG system, this table can later be extended with embedding vectors or connected to a vector database.
+
 ## Why Store Lists As JSON?
 
 Fields such as `matched_keywords`, `suggestions`, and `interview_questions` are naturally lists.
