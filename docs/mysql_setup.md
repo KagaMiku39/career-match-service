@@ -78,6 +78,35 @@ CREATE TABLE IF NOT EXISTS knowledge_chunks (
 
 `knowledge_chunks` stores source snippets for retrieval. In a full RAG system, this table can later be extended with embedding vectors or connected to a vector database.
 
+The workflow module creates two more tables:
+
+```sql
+CREATE TABLE IF NOT EXISTS prompt_templates (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(120) NOT NULL,
+    description VARCHAR(300) NOT NULL,
+    system_prompt TEXT NOT NULL,
+    user_template TEXT NOT NULL,
+    variables JSON NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_prompt_template_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS workflow_runs (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    template_id BIGINT NOT NULL,
+    inputs JSON NOT NULL,
+    rendered_prompt TEXT NOT NULL,
+    output TEXT NOT NULL,
+    mode VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_workflow_template_id (template_id),
+    INDEX idx_workflow_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+`prompt_templates` stores reusable prompts. `workflow_runs` stores every execution result, which makes LLM prompt debugging and result tracing easier.
+
 ## Why Store Lists As JSON?
 
 Fields such as `matched_keywords`, `suggestions`, and `interview_questions` are naturally lists.

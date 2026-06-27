@@ -80,3 +80,36 @@ class RagAnswerResponse(BaseModel):
     question: str
     answer: str
     references: list[KnowledgeSearchHit]
+
+
+class PromptTemplateCreate(BaseModel):
+    name: str = Field(..., min_length=2, max_length=120)
+    description: str = Field(default="", max_length=300)
+    system_prompt: str = Field(default="You are a helpful assistant.")
+    user_template: str = Field(..., min_length=10)
+    variables: list[str] = Field(default_factory=list)
+
+
+class PromptTemplate(BaseModel):
+    id: int
+    name: str
+    description: str
+    system_prompt: str
+    user_template: str
+    variables: list[str]
+    created_at: str
+
+
+class WorkflowRunRequest(BaseModel):
+    template_id: int
+    inputs: dict[str, str] = Field(default_factory=dict)
+    use_llm: bool = Field(default=False)
+
+
+class WorkflowRunResponse(BaseModel):
+    run_id: int
+    template_id: int
+    rendered_prompt: str
+    output: str
+    mode: str
+    created_at: str

@@ -1,0 +1,9 @@
+{
+  "template_id": 1,
+  "inputs": {
+    "target_role": "大模型应用后端开发实习生",
+    "job_description": "需要 Python、数据库、Prompt、LLM API、RAG、Docker。",
+    "resume_text": "数字媒体技术专业，ACM 算法训练，Unity 项目经验，正在补 FastAPI、MySQL 和大模型应用后端。"
+  },
+  "use_llm": false
+}

@@ -11,12 +11,17 @@ from app.schemas import (
     KnowledgeChunkCreate,
     KnowledgeSearchRequest,
     KnowledgeSearchResponse,
+    PromptTemplate,
+    PromptTemplateCreate,
     RagAnswerRequest,
     RagAnswerResponse,
+    WorkflowRunRequest,
+    WorkflowRunResponse,
 )
 from app.knowledge import create_knowledge_chunk, answer_with_retrieval, search_knowledge
 from app.service import analyze_resume
 from app.storage import get_analysis_record, init_db, list_analysis_records, list_knowledge_chunks, save_analysis
+from app.workflow import create_prompt_template, list_templates, run_workflow
 
 load_dotenv()
 
@@ -72,3 +77,21 @@ def search_chunks(request: KnowledgeSearchRequest) -> KnowledgeSearchResponse:
 @app.post("/rag/answer", response_model=RagAnswerResponse)
 def rag_answer(request: RagAnswerRequest) -> RagAnswerResponse:
     return answer_with_retrieval(request)
+
+
+@app.post("/workflow/templates", response_model=PromptTemplate)
+def create_template(template: PromptTemplateCreate) -> PromptTemplate:
+    return create_prompt_template(template)
+
+
+@app.get("/workflow/templates", response_model=list[PromptTemplate])
+def get_templates(limit: int = 50) -> list[PromptTemplate]:
+    return list_templates(limit=limit)
+
+
+@app.post("/workflow/run", response_model=WorkflowRunResponse)
+def execute_workflow(request: WorkflowRunRequest) -> WorkflowRunResponse:
+    try:
+        return run_workflow(request)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

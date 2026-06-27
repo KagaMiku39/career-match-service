@@ -12,6 +12,9 @@ from app.schemas import (
     AnalyzeResumeResponse,
     KnowledgeChunk,
     KnowledgeChunkCreate,
+    PromptTemplate,
+    PromptTemplateCreate,
+    WorkflowRunResponse,
 )
 
 
@@ -101,6 +104,35 @@ def init_db() -> None:
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
                     """
                 )
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS prompt_templates (
+                        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                        name VARCHAR(120) NOT NULL,
+                        description VARCHAR(300) NOT NULL,
+                        system_prompt TEXT NOT NULL,
+                        user_template TEXT NOT NULL,
+                        variables JSON NOT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_prompt_template_created_at (created_at)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """
+                )
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS workflow_runs (
+                        id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                        template_id BIGINT NOT NULL,
+                        inputs JSON NOT NULL,
+                        rendered_prompt TEXT NOT NULL,
+                        output TEXT NOT NULL,
+                        mode VARCHAR(32) NOT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_workflow_template_id (template_id),
+                        INDEX idx_workflow_created_at (created_at)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """
+                )
             conn.commit()
         finally:
             conn.close()
@@ -132,6 +164,32 @@ def init_db() -> None:
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
                 tags TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS prompt_templates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                system_prompt TEXT NOT NULL,
+                user_template TEXT NOT NULL,
+                variables TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS workflow_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                template_id INTEGER NOT NULL,
+                inputs TEXT NOT NULL,
+                rendered_prompt TEXT NOT NULL,
+                output TEXT NOT NULL,
+                mode TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
             """
@@ -333,3 +391,163 @@ def list_knowledge_chunks(limit: int = 50) -> list[KnowledgeChunk]:
         )
         for row in rows
     ]
+
+
+def save_prompt_template(template: PromptTemplateCreate) -> int:
+    values = (
+        template.name,
+        template.description,
+        template.system_prompt,
+        template.user_template,
+        json.dumps(template.variables, ensure_ascii=False),
+    )
+
+    if is_mysql_enabled():
+        conn = get_mysql_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO prompt_templates
+                    (name, description, system_prompt, user_template, variables)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    values,
+                )
+                template_id = int(cursor.lastrowid)
+            conn.commit()
+            return template_id
+        finally:
+            conn.close()
+
+    with get_sqlite_connection() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO prompt_templates
+            (name, description, system_prompt, user_template, variables)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            values,
+        )
+        return int(cursor.lastrowid)
+
+
+def list_prompt_templates(limit: int = 50) -> list[PromptTemplate]:
+    limit = max(1, min(limit, 100))
+
+    if is_mysql_enabled():
+        conn = get_mysql_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, name, description, system_prompt, user_template, variables, created_at
+                    FROM prompt_templates
+                    ORDER BY id DESC
+                    LIMIT %s
+                    """,
+                    (limit,),
+                )
+                rows = cursor.fetchall()
+        finally:
+            conn.close()
+    else:
+        with get_sqlite_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, name, description, system_prompt, user_template, variables, created_at
+                FROM prompt_templates
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+
+    return [row_to_prompt_template(row) for row in rows]
+
+
+def get_prompt_template(template_id: int) -> PromptTemplate | None:
+    if is_mysql_enabled():
+        conn = get_mysql_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM prompt_templates WHERE id = %s", (template_id,))
+                row = cursor.fetchone()
+        finally:
+            conn.close()
+    else:
+        with get_sqlite_connection() as conn:
+            row = conn.execute("SELECT * FROM prompt_templates WHERE id = ?", (template_id,)).fetchone()
+
+    if row is None:
+        return None
+    return row_to_prompt_template(row)
+
+
+def save_workflow_run(
+    template_id: int,
+    inputs: dict[str, str],
+    rendered_prompt: str,
+    output: str,
+    mode: str,
+) -> WorkflowRunResponse:
+    values = (
+        template_id,
+        json.dumps(inputs, ensure_ascii=False),
+        rendered_prompt,
+        output,
+        mode,
+    )
+
+    if is_mysql_enabled():
+        conn = get_mysql_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO workflow_runs
+                    (template_id, inputs, rendered_prompt, output, mode)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    values,
+                )
+                run_id = int(cursor.lastrowid)
+                cursor.execute("SELECT created_at FROM workflow_runs WHERE id = %s", (run_id,))
+                created_at = str(cursor.fetchone()["created_at"])
+            conn.commit()
+        finally:
+            conn.close()
+    else:
+        with get_sqlite_connection() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO workflow_runs
+                (template_id, inputs, rendered_prompt, output, mode)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                values,
+            )
+            run_id = int(cursor.lastrowid)
+            row = conn.execute("SELECT created_at FROM workflow_runs WHERE id = ?", (run_id,)).fetchone()
+            created_at = str(row["created_at"])
+
+    return WorkflowRunResponse(
+        run_id=run_id,
+        template_id=template_id,
+        rendered_prompt=rendered_prompt,
+        output=output,
+        mode=mode,
+        created_at=created_at,
+    )
+
+
+def row_to_prompt_template(row: Any) -> PromptTemplate:
+    return PromptTemplate(
+        id=row["id"],
+        name=row["name"],
+        description=row["description"],
+        system_prompt=row["system_prompt"],
+        user_template=row["user_template"],
+        variables=json.loads(row["variables"]),
+        created_at=str(row["created_at"]),
+    )

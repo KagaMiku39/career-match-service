@@ -1,0 +1,7 @@
+{
+  "name": "resume_gap_analyzer",
+  "description": "Analyze the gap between a resume and a target LLM backend job.",
+  "system_prompt": "You are a strict technical resume reviewer. Return concise and actionable advice.",
+  "user_template": "Target role: {{target_role}}\n\nJob description:\n{{job_description}}\n\nResume:\n{{resume_text}}\n\nPlease summarize strengths, missing skills, and next actions.",
+  "variables": ["target_role", "job_description", "resume_text"]
+}

@@ -11,6 +11,7 @@ This project is built as an interview-oriented backend practice project: it firs
 - Persist every analysis record.
 - Query recent analysis records and analysis detail by id.
 - Store and search knowledge chunks for a mini RAG-style workflow.
+- Manage prompt templates and execute a small Dify-inspired LLM workflow.
 - Use local rules as a reliable fallback when no LLM API key is configured.
 - Optionally call an OpenAI-compatible Chat Completions API.
 - Support SQLite by default and MySQL through `DATABASE_URL`.
@@ -115,6 +116,14 @@ Search related knowledge chunks with a lightweight keyword scorer.
 
 Build an answer from retrieved knowledge chunks. This is a small RAG-style baseline inspired by mainstream LLM application platforms such as Dify.
 
+### POST `/workflow/templates`
+
+Create a prompt template with variables such as `{{resume_text}}` and `{{job_description}}`.
+
+### POST `/workflow/run`
+
+Render a prompt template with input variables, optionally call an OpenAI-compatible LLM provider, and save the execution record.
+
 ## Optional: MySQL
 
 SQLite is used when `DATABASE_URL` is empty. To switch to MySQL, create a `.env` file:
@@ -143,4 +152,5 @@ Then set `use_llm` to `true` in the `/resume/analyze` request. If the LLM call f
 - MySQL support is added through a storage layer, so the API and service logic do not need to care which database is used.
 - Rule-based scoring is used as an explainable baseline and fallback.
 - The mini RAG module uses keyword retrieval first, leaving a clear upgrade path to embeddings and vector search.
+- The workflow module keeps prompt templates and execution records in the database, making prompt engineering easier to debug and reuse.
 - The LLM prompt asks the model to return JSON, making the result easier for the backend to validate and store.
