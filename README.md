@@ -120,9 +120,25 @@ Build an answer from retrieved knowledge chunks. This is a small RAG-style basel
 
 Create a prompt template with variables such as `{{resume_text}}` and `{{job_description}}`.
 
+### GET `/workflow/templates`
+
+List prompt templates.
+
+### GET `/workflow/templates/{template_id}`
+
+Get one prompt template detail.
+
 ### POST `/workflow/run`
 
 Render a prompt template with input variables, optionally call an OpenAI-compatible LLM provider, and save the execution record.
+
+### GET `/workflow/runs`
+
+List recent workflow execution records.
+
+### GET `/workflow/runs/{run_id}`
+
+Get one workflow execution detail, including rendered prompt, output, input variables, mode, and created time.
 
 ## Optional: MySQL
 

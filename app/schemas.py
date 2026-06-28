@@ -113,3 +113,7 @@ class WorkflowRunResponse(BaseModel):
     output: str
     mode: str
     created_at: str
+
+
+class WorkflowRunRecord(WorkflowRunResponse):
+    inputs: dict[str, str]

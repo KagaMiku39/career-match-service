@@ -15,13 +15,14 @@ from app.schemas import (
     PromptTemplateCreate,
     RagAnswerRequest,
     RagAnswerResponse,
+    WorkflowRunRecord,
     WorkflowRunRequest,
     WorkflowRunResponse,
 )
 from app.knowledge import create_knowledge_chunk, answer_with_retrieval, search_knowledge
 from app.service import analyze_resume
 from app.storage import get_analysis_record, init_db, list_analysis_records, list_knowledge_chunks, save_analysis
-from app.workflow import create_prompt_template, list_templates, run_workflow
+from app.workflow import create_prompt_template, get_run, get_template, list_runs, list_templates, run_workflow
 
 load_dotenv()
 
@@ -89,9 +90,32 @@ def get_templates(limit: int = 50) -> list[PromptTemplate]:
     return list_templates(limit=limit)
 
 
+@app.get("/workflow/templates/{template_id}", response_model=PromptTemplate)
+def get_template_detail(template_id: int) -> PromptTemplate:
+    try:
+        return get_template(template_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @app.post("/workflow/run", response_model=WorkflowRunResponse)
 def execute_workflow(request: WorkflowRunRequest) -> WorkflowRunResponse:
     try:
         return run_workflow(request)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/workflow/runs", response_model=list[WorkflowRunRecord])
+def get_workflow_runs(limit: int = 50) -> list[WorkflowRunRecord]:
+    return list_runs(limit=limit)
+
+
+@app.get("/workflow/runs/{run_id}", response_model=WorkflowRunRecord)
+def get_workflow_run_detail(run_id: int) -> WorkflowRunRecord:
+    try:
+        return get_run(run_id)
+    except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

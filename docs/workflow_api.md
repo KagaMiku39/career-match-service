@@ -13,7 +13,10 @@ create prompt template -> render variables -> optionally call LLM -> save workfl
 ```text
 POST /workflow/templates
 GET  /workflow/templates
+GET  /workflow/templates/{template_id}
 POST /workflow/run
+GET  /workflow/runs
+GET  /workflow/runs/{run_id}
 ```
 
 ## Why This Fits LLM Backend Development
@@ -57,6 +60,30 @@ Run the workflow:
 ```
 
 When `use_llm` is `false` or `LLM_API_KEY` is missing, the service returns a local rendered prompt preview and stores the run record. When `use_llm` is `true` and the LLM environment variables are configured, it calls the OpenAI-compatible chat completions endpoint.
+
+## Local Run Steps
+
+```powershell
+cd D:\Unity\Experiment\Farm_Final_Integration\career_match_service
+.\.venv-codex\Scripts\Activate.ps1
+uvicorn app.main:app --reload --port 8000
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Suggested manual demo order:
+
+1. `POST /workflow/templates`
+2. `GET /workflow/templates`
+3. `POST /workflow/run`
+4. `GET /workflow/runs`
+5. `GET /workflow/runs/{run_id}`
+
+If a required variable is missing, `/workflow/run` returns `400` with a clear error message. If the template id does not exist, it returns `404`.
 
 ## Interview Explanation
 

@@ -14,6 +14,7 @@ from app.schemas import (
     KnowledgeChunkCreate,
     PromptTemplate,
     PromptTemplateCreate,
+    WorkflowRunRecord,
     WorkflowRunResponse,
 )
 
@@ -541,6 +542,58 @@ def save_workflow_run(
     )
 
 
+def list_workflow_runs(limit: int = 50) -> list[WorkflowRunRecord]:
+    limit = max(1, min(limit, 100))
+
+    if is_mysql_enabled():
+        conn = get_mysql_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, template_id, inputs, rendered_prompt, output, mode, created_at
+                    FROM workflow_runs
+                    ORDER BY id DESC
+                    LIMIT %s
+                    """,
+                    (limit,),
+                )
+                rows = cursor.fetchall()
+        finally:
+            conn.close()
+    else:
+        with get_sqlite_connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT id, template_id, inputs, rendered_prompt, output, mode, created_at
+                FROM workflow_runs
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+
+    return [row_to_workflow_run(row) for row in rows]
+
+
+def get_workflow_run(run_id: int) -> WorkflowRunRecord | None:
+    if is_mysql_enabled():
+        conn = get_mysql_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM workflow_runs WHERE id = %s", (run_id,))
+                row = cursor.fetchone()
+        finally:
+            conn.close()
+    else:
+        with get_sqlite_connection() as conn:
+            row = conn.execute("SELECT * FROM workflow_runs WHERE id = ?", (run_id,)).fetchone()
+
+    if row is None:
+        return None
+    return row_to_workflow_run(row)
+
+
 def row_to_prompt_template(row: Any) -> PromptTemplate:
     return PromptTemplate(
         id=row["id"],
@@ -549,5 +602,17 @@ def row_to_prompt_template(row: Any) -> PromptTemplate:
         system_prompt=row["system_prompt"],
         user_template=row["user_template"],
         variables=json.loads(row["variables"]),
+        created_at=str(row["created_at"]),
+    )
+
+
+def row_to_workflow_run(row: Any) -> WorkflowRunRecord:
+    return WorkflowRunRecord(
+        run_id=row["id"],
+        template_id=row["template_id"],
+        inputs=json.loads(row["inputs"]),
+        rendered_prompt=row["rendered_prompt"],
+        output=row["output"],
+        mode=row["mode"],
         created_at=str(row["created_at"]),
     )

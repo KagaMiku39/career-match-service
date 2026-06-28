@@ -4,10 +4,12 @@ import re
 import urllib.error
 import urllib.request
 
-from app.schemas import PromptTemplate, PromptTemplateCreate, WorkflowRunRequest, WorkflowRunResponse
+from app.schemas import PromptTemplate, PromptTemplateCreate, WorkflowRunRecord, WorkflowRunRequest, WorkflowRunResponse
 from app.storage import (
     get_prompt_template,
+    get_workflow_run,
     list_prompt_templates,
+    list_workflow_runs,
     save_prompt_template,
     save_workflow_run,
 )
@@ -36,15 +38,23 @@ def list_templates(limit: int = 50) -> list[PromptTemplate]:
     return list_prompt_templates(limit=limit)
 
 
+def get_template(template_id: int) -> PromptTemplate:
+    template = get_prompt_template(template_id)
+    if template is None:
+        raise LookupError("Prompt template not found.")
+    return template
+
+
 def run_workflow(request: WorkflowRunRequest) -> WorkflowRunResponse:
     template = get_prompt_template(request.template_id)
     if template is None:
-        raise ValueError("Prompt template not found.")
+        raise LookupError("Prompt template not found.")
 
-    rendered_prompt = render_template(template.user_template, request.inputs)
     missing_variables = [name for name in template.variables if name not in request.inputs]
     if missing_variables:
-        rendered_prompt += "\n\nMissing variables: " + ", ".join(missing_variables)
+        raise ValueError("Missing required variables: " + ", ".join(missing_variables))
+
+    rendered_prompt = render_template(template.user_template, request.inputs)
 
     if request.use_llm and os.getenv("LLM_API_KEY"):
         output = call_llm(template.system_prompt, rendered_prompt)
@@ -63,6 +73,17 @@ def run_workflow(request: WorkflowRunRequest) -> WorkflowRunResponse:
         output=output,
         mode=mode,
     )
+
+
+def list_runs(limit: int = 50) -> list[WorkflowRunRecord]:
+    return list_workflow_runs(limit=limit)
+
+
+def get_run(run_id: int) -> WorkflowRunRecord:
+    run = get_workflow_run(run_id)
+    if run is None:
+        raise LookupError("Workflow run not found.")
+    return run
 
 
 def extract_variables(template_text: str) -> list[str]:
