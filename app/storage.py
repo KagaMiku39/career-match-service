@@ -10,10 +10,12 @@ from app.schemas import (
     AnalysisRecordDetail,
     AnalyzeResumeRequest,
     AnalyzeResumeResponse,
+    DatabaseInfoResponse,
     KnowledgeChunk,
     KnowledgeChunkCreate,
     PromptTemplate,
     PromptTemplateCreate,
+    StatsResponse,
     WorkflowRunRecord,
     WorkflowRunResponse,
 )
@@ -196,6 +198,41 @@ def init_db() -> None:
             """
         )
 
+
+def count_table_rows(table_name: str) -> int:
+    sql = f"SELECT COUNT(*) AS count FROM {table_name}"
+
+    if is_mysql_enabled():
+        conn = get_mysql_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(sql)
+                row = cursor.fetchone()
+                return int(row["count"])
+        finally:
+            conn.close()
+
+    with get_sqlite_connection() as conn:
+        row = conn.execute(sql).fetchone()
+        return int(row["count"])
+
+
+def get_stats() -> StatsResponse:
+    return StatsResponse(
+        analysis_count=count_table_rows("analysis_records"),
+        knowledge_chunk_count=count_table_rows("knowledge_chunks"),
+        prompt_template_count=count_table_rows("prompt_templates"),
+        workflow_run_count=count_table_rows("workflow_runs"),
+    )
+
+
+def get_database_info() -> DatabaseInfoResponse:
+    mysql_enabled = is_mysql_enabled()
+    return DatabaseInfoResponse(
+        database="mysql" if mysql_enabled else "sqlite",
+        mysql_enabled=mysql_enabled,
+        database_url_configured=bool(os.getenv("DATABASE_URL")),
+    )
 
 def save_analysis(request: AnalyzeResumeRequest, response: AnalyzeResumeResponse) -> int:
     values = (
@@ -616,3 +653,4 @@ def row_to_workflow_run(row: Any) -> WorkflowRunRecord:
         mode=row["mode"],
         created_at=str(row["created_at"]),
     )
+

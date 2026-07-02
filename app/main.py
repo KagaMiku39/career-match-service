@@ -6,6 +6,7 @@ from app.schemas import (
     AnalysisRecordDetail,
     AnalyzeResumeRequest,
     AnalyzeResumeResponse,
+    DatabaseInfoResponse,
     HealthResponse,
     KnowledgeChunk,
     KnowledgeChunkCreate,
@@ -15,13 +16,14 @@ from app.schemas import (
     PromptTemplateCreate,
     RagAnswerRequest,
     RagAnswerResponse,
+    StatsResponse,
     WorkflowRunRecord,
     WorkflowRunRequest,
     WorkflowRunResponse,
 )
 from app.knowledge import create_knowledge_chunk, answer_with_retrieval, search_knowledge
 from app.service import analyze_resume
-from app.storage import get_analysis_record, init_db, list_analysis_records, list_knowledge_chunks, save_analysis
+from app.storage import get_analysis_record, get_database_info, get_stats, init_db, list_analysis_records, list_knowledge_chunks, save_analysis
 from app.workflow import create_prompt_template, get_run, get_template, list_runs, list_templates, run_workflow
 
 load_dotenv()
@@ -39,6 +41,16 @@ init_db()
 def health() -> HealthResponse:
     return HealthResponse(status="ok", service="career-match-service")
 
+
+
+@app.get("/stats", response_model=StatsResponse)
+def stats() -> StatsResponse:
+    return get_stats()
+
+
+@app.get("/database/info", response_model=DatabaseInfoResponse)
+def database_info() -> DatabaseInfoResponse:
+    return get_database_info()
 
 @app.post("/resume/analyze", response_model=AnalyzeResumeResponse)
 def resume_analyze(request: AnalyzeResumeRequest) -> AnalyzeResumeResponse:
@@ -119,3 +131,5 @@ def get_workflow_run_detail(run_id: int) -> WorkflowRunRecord:
         return get_run(run_id)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+

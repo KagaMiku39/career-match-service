@@ -6,6 +6,19 @@ class HealthResponse(BaseModel):
     service: str
 
 
+class StatsResponse(BaseModel):
+    analysis_count: int
+    knowledge_chunk_count: int
+    prompt_template_count: int
+    workflow_run_count: int
+
+
+class DatabaseInfoResponse(BaseModel):
+    database: str
+    mysql_enabled: bool
+    database_url_configured: bool
+
+
 class AnalyzeResumeRequest(BaseModel):
     resume_text: str = Field(..., min_length=20, description="Resume text to analyze.")
     job_description: str = Field(..., min_length=20, description="Target job description.")
@@ -117,3 +130,4 @@ class WorkflowRunResponse(BaseModel):
 
 class WorkflowRunRecord(WorkflowRunResponse):
     inputs: dict[str, str]
+
